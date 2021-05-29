@@ -8,6 +8,7 @@ import 'package:face_net_authentication/services/camera.service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
 import 'package:face_net_authentication/services/ml_vision_service.dart';
 import 'package:camera/camera.dart';
+import 'package:face_net_authentication/utils/constant.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
@@ -39,7 +40,8 @@ class SignInState extends State<SignIn> {
 
   // switchs when the user press the camera
   bool _saving = false;
-  bool _bottomSheetVisible = false;
+  bool _bottomSheetVisible = true;
+  int _currentStep = StepLiveness.stepHeadLeft;
 
   String imagePath;
   Size imageSize;
@@ -128,6 +130,21 @@ class SignInState extends State<SignIn> {
           _detectingFaces = false;
         }
       }
+
+      if (faceDetected != null && _currentStep != StepLiveness.stepTakePicture) {
+        if (_currentStep == StepLiveness.stepHeadLeft && faceDetected.headEulerAngleY > 35) {
+          _updateValidStep(StepLiveness.stepHeadRight);
+        }
+        if (_currentStep == StepLiveness.stepHeadRight && faceDetected.headEulerAngleY < -35) {
+          _updateValidStep(StepLiveness.stepBlink);
+        }
+        if (_currentStep == StepLiveness.stepBlink && (faceDetected.leftEyeOpenProbability < 0.4 || faceDetected.rightEyeOpenProbability < 0.4)) {
+          _updateValidStep(StepLiveness.stepSmile);
+        }
+        if (_currentStep == StepLiveness.stepSmile && faceDetected.smilingProbability > 0.3) {
+          _updateValidStep(StepLiveness.stepTakePicture);
+        }
+      }
     });
   }
 
@@ -168,11 +185,21 @@ class SignInState extends State<SignIn> {
 
   _reload() {
     setState(() {
-      _bottomSheetVisible = false;
+      _bottomSheetVisible = true;
       cameraInitializated = false;
       pictureTaked = false;
+      _currentStep = StepLiveness.stepHeadLeft;
     });
     this._start();
+  }
+
+  _updateValidStep(int step) {
+    setState(() {
+      _currentStep = step;
+      if (step == StepLiveness.stepTakePicture) {
+        _bottomSheetVisible = false;
+      }
+    });
   }
 
   @override
@@ -237,6 +264,7 @@ class SignInState extends State<SignIn> {
               }),
           CameraHeader(
             "LOGIN",
+            _currentStep,
             onBackPressed: _onBackPressed,
           )
         ],
