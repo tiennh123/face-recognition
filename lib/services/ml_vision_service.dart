@@ -24,6 +24,10 @@ class MLVisionService {
     this._faceDetector = FirebaseVision.instance.faceDetector(
       FaceDetectorOptions(
         mode: FaceDetectorMode.accurate,
+        enableClassification: true,
+        // enableContours: true,
+        // enableLandmarks: true,
+        // enableTracking: true,
       ),
     );
   }

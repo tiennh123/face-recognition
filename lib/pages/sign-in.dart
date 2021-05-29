@@ -11,6 +11,7 @@ import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:logger/logger.dart' as log;
 
 class SignIn extends StatefulWidget {
   final CameraDescription cameraDescription;
@@ -92,6 +93,23 @@ class SignInState extends State<SignIn> {
               setState(() {
                 faceDetected = faces[0];
               });
+
+              Map<String, dynamic> dataFace = {
+                "boundingBox": {
+                  "top": faceDetected.boundingBox.top,
+                  "right": faceDetected.boundingBox.right,
+                  "bottom": faceDetected.boundingBox.bottom,
+                  "left": faceDetected.boundingBox.left,
+                  "width": faceDetected.boundingBox.width,
+                  "height": faceDetected.boundingBox.height
+                },
+                "headEulerAngleY": faceDetected.headEulerAngleY,
+                "headEulerAngleZ": faceDetected.headEulerAngleZ,
+                "leftEyeOpenProbability": faceDetected.leftEyeOpenProbability,
+                "rightEyeOpenProbability": faceDetected.rightEyeOpenProbability,
+                "smilingProbability": faceDetected.smilingProbability,
+              };
+              log.Logger().v({'[SignIn] frameFaces': dataFace});
 
               if (_saving) {
                 _saving = false;

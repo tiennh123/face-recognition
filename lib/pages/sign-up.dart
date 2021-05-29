@@ -10,6 +10,7 @@ import 'package:face_net_authentication/services/ml_vision_service.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart' as log;
 
 class SignUp extends StatefulWidget {
   final CameraDescription cameraDescription;
@@ -116,6 +117,23 @@ class SignUpState extends State<SignUp> {
             setState(() {
               faceDetected = faces[0];
             });
+            
+            Map<String, dynamic> dataFace = {
+              "boundingBox": {
+                "top": faceDetected.boundingBox.top,
+                "right": faceDetected.boundingBox.right,
+                "bottom": faceDetected.boundingBox.bottom,
+                "left": faceDetected.boundingBox.left,
+                "width": faceDetected.boundingBox.width,
+                "height": faceDetected.boundingBox.height
+              },
+              "headEulerAngleY": faceDetected.headEulerAngleY,
+              "headEulerAngleZ": faceDetected.headEulerAngleZ,
+              "leftEyeOpenProbability": faceDetected.leftEyeOpenProbability,
+              "rightEyeOpenProbability": faceDetected.rightEyeOpenProbability,
+              "smilingProbability": faceDetected.smilingProbability,
+            };
+            log.Logger().v({'[SignUp] frameFaces': dataFace});
 
             if (_saving) {
               _faceNetService.setCurrentPrediction(image, faceDetected);

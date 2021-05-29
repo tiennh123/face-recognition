@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:logger/logger.dart' as log;
 
 class DataBaseService {
   // singleton boilerplate
@@ -29,6 +30,7 @@ class DataBaseService {
 
     if (jsonFile.existsSync()) {
       _db = json.decode(jsonFile.readAsStringSync());
+      log.Logger().v({'[DataBaseService] loadDB': _db});
     }
   }
 
@@ -37,6 +39,7 @@ class DataBaseService {
   Future saveData(String user, String password, List modelData) async {
     String userAndPass = user + ':' + password;
     _db[userAndPass] = modelData;
+    log.Logger().v({'[DataBaseService] saveData': _db});
     jsonFile.writeAsStringSync(json.encode(_db));
   }
 
