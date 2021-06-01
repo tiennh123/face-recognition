@@ -1,8 +1,9 @@
 // A screen that allows users to take a picture using a given camera.
 import 'dart:async';
 import 'dart:io';
+import 'package:face_net_authentication/pages/models/user.model.dart';
+import 'package:face_net_authentication/pages/profile.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
-import 'package:face_net_authentication/pages/widgets/auth-action-button.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
@@ -40,8 +41,11 @@ class SignInState extends State<SignIn> {
 
   // switchs when the user press the camera
   bool _saving = false;
-  bool _bottomSheetVisible = true;
   int _currentStep = StepLiveness.stepHeadLeft;
+  bool isShot = false;
+
+  User predictedUser;
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   String imagePath;
   Size imageSize;
@@ -141,11 +145,19 @@ class SignInState extends State<SignIn> {
         if (_currentStep == StepLiveness.stepBlink && (faceDetected.leftEyeOpenProbability < 0.4 || faceDetected.rightEyeOpenProbability < 0.4)) {
           _updateValidStep(StepLiveness.stepSmile);
         }
-        if (_currentStep == StepLiveness.stepSmile && faceDetected.smilingProbability > 0.3) {
-          _updateValidStep(StepLiveness.stepTakePicture);
+        if (_currentStep == StepLiveness.stepSmile && faceDetected.smilingProbability > 0.4 && !isShot) {
+          setState(() {
+            isShot = true;
+          });
+          await onShot();
         }
       }
     });
+  }
+
+  String _predictUser() {
+    String userAndPass = _faceNetService.predict();
+    return userAndPass ?? null;
   }
 
   /// handles the button pressed event
@@ -159,23 +171,32 @@ class SignInState extends State<SignIn> {
           );
         },
       );
-
-      return false;
     } else {
       _saving = true;
 
       await Future.delayed(Duration(milliseconds: 500));
-      await _cameraService.cameraController.stopImageStream();
-      await Future.delayed(Duration(milliseconds: 200));
+      if(_cameraService.cameraController != null && _cameraService.cameraController.value.isStreamingImages) {
+        await _cameraService.cameraController.stopImageStream();
+      }
+      await Future.delayed(Duration(milliseconds: 500));
       XFile file = await _cameraService.takePicture();
 
       setState(() {
-        _bottomSheetVisible = true;
         pictureTaked = true;
         imagePath = file.path;
       });
 
-      return true;
+      var userAndPass = _predictUser();
+      if (userAndPass != null) {
+        this.predictedUser = User.fromDB(userAndPass);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (BuildContext context) => Profile(
+                    this.predictedUser.user,
+                    imagePath: _cameraService.imagePath,
+                  )));
+      }
     }
   }
 
@@ -183,22 +204,9 @@ class SignInState extends State<SignIn> {
     Navigator.of(context).pop();
   }
 
-  _reload() {
-    setState(() {
-      _bottomSheetVisible = true;
-      cameraInitializated = false;
-      pictureTaked = false;
-      _currentStep = StepLiveness.stepHeadLeft;
-    });
-    this._start();
-  }
-
   _updateValidStep(int step) {
     setState(() {
       _currentStep = step;
-      if (step == StepLiveness.stepTakePicture) {
-        _bottomSheetVisible = false;
-      }
     });
   }
 
@@ -208,6 +216,7 @@ class SignInState extends State<SignIn> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
+      key: scaffoldKey,
       body: Stack(
         children: [
           FutureBuilder<void>(
@@ -270,14 +279,6 @@ class SignInState extends State<SignIn> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: !_bottomSheetVisible
-          ? AuthActionButton(
-              _initializeControllerFuture,
-              onPressed: onShot,
-              isLogin: true,
-              reload: _reload,
-            )
-          : Container(),
     );
   }
 }

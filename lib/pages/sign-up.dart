@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:face_net_authentication/pages/db/database.dart';
+import 'package:face_net_authentication/pages/home.dart';
+import 'package:face_net_authentication/pages/models/user.model.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
-import 'package:face_net_authentication/pages/widgets/auth-action-button.dart';
+import 'package:face_net_authentication/pages/widgets/app_button.dart';
+import 'package:face_net_authentication/pages/widgets/app_text_field.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
@@ -35,13 +39,18 @@ class SignUpState extends State<SignUp> {
 
   // switchs when the user press the camera
   bool _saving = false;
-  bool _bottomSheetVisible = true;
   int _currentStep = StepLiveness.stepHeadLeft;
+  bool isShot = false;
+
+  User predictedUser;
+  TextEditingController _userTextEditingController = TextEditingController(text: '');
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   // service injection
   MLVisionService _mlVisionService = MLVisionService();
   CameraService _cameraService = CameraService();
   FaceNetService _faceNetService = FaceNetService();
+  DataBaseService _dataBaseService = DataBaseService();
 
   @override
   void initState() {
@@ -82,31 +91,28 @@ class SignUpState extends State<SignUp> {
           );
         },
       );
-
-      return false;
     } else {
       _saving = true;
       await Future.delayed(Duration(milliseconds: 500));
-      await _cameraService.cameraController.stopImageStream();
-      await Future.delayed(Duration(milliseconds: 200));
+      if(_cameraService.cameraController != null && _cameraService.cameraController.value.isStreamingImages) {
+        await _cameraService.cameraController.stopImageStream();
+      }
+      await Future.delayed(Duration(milliseconds: 500));
       XFile file = await _cameraService.takePicture();
       imagePath = file.path;
 
       setState(() {
-        _bottomSheetVisible = true;
         pictureTaked = true;
       });
 
-      return true;
+      PersistentBottomSheetController bottomSheetController = scaffoldKey.currentState.showBottomSheet((context) => signSheet(context));
+      bottomSheetController.closed.whenComplete(() => _reload());
     }
   }
 
   _updateValidStep(int step) {
     setState(() {
       _currentStep = step;
-      if (step == StepLiveness.stepTakePicture) {
-        _bottomSheetVisible = false;
-      }
     });
   }
 
@@ -175,8 +181,11 @@ class SignUpState extends State<SignUp> {
         if (_currentStep == StepLiveness.stepBlink && (faceDetected.leftEyeOpenProbability < 0.4 || faceDetected.rightEyeOpenProbability < 0.4)) {
           _updateValidStep(StepLiveness.stepSmile);
         }
-        if (_currentStep == StepLiveness.stepSmile && faceDetected.smilingProbability > 0.3) {
-          _updateValidStep(StepLiveness.stepTakePicture);
+        if (_currentStep == StepLiveness.stepSmile && faceDetected.smilingProbability > 0.4 && !isShot) {
+          setState(() {
+            isShot = true;
+          });
+          await onShot();
         }
       }
     });
@@ -188,7 +197,6 @@ class SignUpState extends State<SignUp> {
 
   _reload() {
     setState(() {
-      _bottomSheetVisible = true;
       cameraInitializated = false;
       pictureTaked = false;
       _currentStep = StepLiveness.stepHeadLeft;
@@ -202,6 +210,7 @@ class SignUpState extends State<SignUp> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
+        key: scaffoldKey,
         body: Stack(
           children: [
             FutureBuilder<void>(
@@ -265,14 +274,55 @@ class SignUpState extends State<SignUp> {
           ],
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: !_bottomSheetVisible
-            ? AuthActionButton(
-                _initializeControllerFuture,
-                onPressed: onShot,
-                isLogin: false,
-                reload: _reload,
-              )
-            : Container()
         );
+  }
+
+  signSheet(context) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            child: Column(
+              children: [
+                AppTextField(
+                  controller: _userTextEditingController,
+                  labelText: "Your Name",
+                ),
+                SizedBox(height: 10),
+                Divider(),
+                SizedBox(height: 10),
+                AppButton(
+                  text: 'SIGN UP',
+                  onPressed: () async {
+                    await _signUp(context);
+                  },
+                  icon: Icon(
+                    Icons.person_add,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future _signUp(context) async {
+    /// gets predicted data from facenet service (user face detected)
+    List predictedData = _faceNetService.predictedData;
+    String user = _userTextEditingController.text;
+
+    /// creates a new user in the 'database'
+    await _dataBaseService.saveData(user, predictedData);
+
+    /// resets the face stored in the face net sevice
+    this._faceNetService.setPredictedData(null);
+    Navigator.push(context,
+        MaterialPageRoute(builder: (BuildContext context) => MyHomePage()));
   }
 }
