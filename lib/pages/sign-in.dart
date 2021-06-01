@@ -136,10 +136,10 @@ class SignInState extends State<SignIn> {
       }
 
       if (faceDetected != null && _currentStep != StepLiveness.stepTakePicture) {
-        if (_currentStep == StepLiveness.stepHeadLeft && faceDetected.headEulerAngleY > 35) {
+        if (_currentStep == StepLiveness.stepHeadLeft && faceDetected.headEulerAngleY > 30) {
           _updateValidStep(StepLiveness.stepHeadRight);
         }
-        if (_currentStep == StepLiveness.stepHeadRight && faceDetected.headEulerAngleY < -35) {
+        if (_currentStep == StepLiveness.stepHeadRight && faceDetected.headEulerAngleY < -30) {
           _updateValidStep(StepLiveness.stepBlink);
         }
         if (_currentStep == StepLiveness.stepBlink && (faceDetected.leftEyeOpenProbability < 0.4 || faceDetected.rightEyeOpenProbability < 0.4)) {
@@ -196,8 +196,21 @@ class SignInState extends State<SignIn> {
                     this.predictedUser.user,
                     imagePath: _cameraService.imagePath,
                   )));
+      } else {
+        PersistentBottomSheetController bottomSheetController = scaffoldKey.currentState.showBottomSheet((context) => signSheet(context));
+        bottomSheetController.closed.whenComplete(() => _reload());
       }
     }
+  }
+
+  _reload() {
+    setState(() {
+      cameraInitializated = false;
+      pictureTaked = false;
+      isShot = false;
+      _currentStep = StepLiveness.stepHeadLeft;
+    });
+    this._start();
   }
 
   _onBackPressed() {
@@ -279,6 +292,26 @@ class SignInState extends State<SignIn> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  signSheet(context) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      width: double.infinity,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          predictedUser == null
+              ? Container(
+                      child: Text(
+                      'User not found 😞',
+                      style: TextStyle(fontSize: 20),
+                    ))
+                  : Container(),
+        ],
+      ),
     );
   }
 }
