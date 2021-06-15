@@ -2,7 +2,11 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:face_net_authentication/pages/db/database.dart';
 import 'package:camera/camera.dart';
+import 'package:face_net_authentication/pages/models/face.model.dart';
+import 'package:face_net_authentication/services/couch_base_service.dart';
+import 'package:face_net_authentication/utils/constant.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
+import 'package:flutter/material.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tflite;
 import 'package:image/image.dart' as imglib;
 
@@ -24,6 +28,19 @@ class FaceNetService {
 
   List _predictedData;
   List get predictedData => this._predictedData;
+
+  // couchbase
+  CouchbaseService _couchbaseService = CouchbaseService();
+  deviceInfoListener(ValueChanged<FaceModel> deviceInfoUpdated) {
+    try {
+      _couchbaseService.getPersistData(Couchbase.MOBILE_INFO, 'thang.td@katsuma.asia', (dataJson) {
+        var data = new Map<String, dynamic>.from(dataJson);
+        deviceInfoUpdated(FaceModel.fromJson(data));
+      });
+    } catch (e) {
+      throw (e);
+    }
+  }
 
   //  saved users data
   dynamic data = {};
@@ -69,6 +86,11 @@ class FaceNetService {
   String predict() {
     /// search closer user prediction if exists
     return _searchResult(this._predictedData);
+  }
+
+  String predictCouchbase(FaceModel faceModel) {
+    /// search closer user prediction if exists
+    return _searchResultCouchbase(this._predictedData, faceModel);
   }
 
   /// _preProess: crops the image to be more easy
@@ -165,6 +187,22 @@ class FaceNetService {
         minDist = currDist;
         predRes = label;
       }
+    }
+    return predRes;
+  }
+
+  String _searchResultCouchbase(List predictedData, FaceModel faceModel) {
+    String predRes;
+    /// if no faces saved
+    if (faceModel == null) return null;
+    double minDist = 999;
+    double currDist = 0.0;
+
+    /// search the closest result 👓
+    currDist = _euclideanDistance(faceModel.faceData, predictedData);
+    if (currDist <= threshold && currDist < minDist) {
+      minDist = currDist;
+      predRes = faceModel.userName;
     }
     return predRes;
   }

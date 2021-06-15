@@ -1,11 +1,13 @@
 // A screen that allows users to take a picture using a given camera.
 import 'dart:async';
 import 'dart:io';
+import 'package:face_net_authentication/pages/models/face.model.dart';
 import 'package:face_net_authentication/pages/models/user.model.dart';
 import 'package:face_net_authentication/pages/profile.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
+import 'package:face_net_authentication/services/couch_base_service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
 import 'package:face_net_authentication/services/ml_vision_service.dart';
 import 'package:camera/camera.dart';
@@ -51,6 +53,9 @@ class SignInState extends State<SignIn> {
   Size imageSize;
   Face faceDetected;
 
+  FaceModel faceModel;
+  CouchbaseService _couchbaseService = CouchbaseService();
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +79,17 @@ class SignInState extends State<SignIn> {
 
     setState(() {
       cameraInitializated = true;
+    });
+
+    // _faceNetService.deviceInfoListener((FaceModel faceModel) {
+    //   setState(() {
+    //     _faceModel = faceModel;   
+    //   });   
+    // });
+   await _couchbaseService.getPersistData(Couchbase.MOBILE_INFO, 'thang.td@katsuma.asia', (dataJson) {
+      setState(() {
+        faceModel = FaceModel.fromJson(dataJson);
+      });
     });
 
     _frameFaces();
@@ -156,7 +172,8 @@ class SignInState extends State<SignIn> {
   }
 
   String _predictUser() {
-    String userAndPass = _faceNetService.predict();
+    // String userAndPass = _faceNetService.predict();
+    String userAndPass = _faceNetService.predictCouchbase(faceModel);
     return userAndPass ?? null;
   }
 

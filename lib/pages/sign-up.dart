@@ -3,12 +3,14 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:face_net_authentication/pages/db/database.dart';
 import 'package:face_net_authentication/pages/home.dart';
+import 'package:face_net_authentication/pages/models/face.model.dart';
 import 'package:face_net_authentication/pages/models/user.model.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
 import 'package:face_net_authentication/pages/widgets/app_button.dart';
 import 'package:face_net_authentication/pages/widgets/app_text_field.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
+import 'package:face_net_authentication/services/couch_base_service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
 import 'package:face_net_authentication/services/ml_vision_service.dart';
 import 'package:camera/camera.dart';
@@ -51,6 +53,9 @@ class SignUpState extends State<SignUp> {
   CameraService _cameraService = CameraService();
   FaceNetService _faceNetService = FaceNetService();
   DataBaseService _dataBaseService = DataBaseService();
+
+  // Sync couchbase
+  CouchbaseService _couchbaseService = CouchbaseService();
 
   @override
   void initState() {
@@ -290,7 +295,7 @@ class SignUpState extends State<SignUp> {
               children: [
                 AppTextField(
                   controller: _userTextEditingController,
-                  labelText: "Your Name",
+                  labelText: "Your UserName",
                 ),
                 SizedBox(height: 10),
                 Divider(),
@@ -323,6 +328,11 @@ class SignUpState extends State<SignUp> {
 
     /// resets the face stored in the face net sevice
     this._faceNetService.setPredictedData(null);
+
+    var faceModel = new FaceModel(userName: user, faceData: predictedData.cast<double>().toList());
+    var dataSync = faceModel.toJson();
+    _couchbaseService.persistData(Couchbase.MOBILE_INFO, user, dataSync);
+
     Navigator.push(context,
         MaterialPageRoute(builder: (BuildContext context) => MyHomePage()));
   }

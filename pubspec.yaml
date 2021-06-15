@@ -38,6 +38,13 @@ dependencies:
   font_awesome_flutter: ^9.0.0
   url_launcher: ^6.0.3
   logger: ^1.0.0
+  http: ^0.13.1
+  flutter_secure_storage: ^4.1.0
+  # couchbase_lite: ^2.8.1
+  # couchbase_lite_dart: ^0.4.0
+  couchbase_lite:
+     git:
+      url: git://github.com/tiennh123/couchbase_lite-master.git
 
 dev_dependencies:
   flutter_test:
