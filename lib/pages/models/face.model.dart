@@ -14,9 +14,11 @@ class FaceModel {
   List<double> faceData;
 
   factory FaceModel.fromJson(Map<String, dynamic> json) {
+    if(json == null) return null;
+    var faceData = jsonDecode(json["faceData"]);
     var data = FaceModel(
       userName: json["userName"],
-      faceData: List<double>.from(json["faceData"].map((x) => x.toDouble())),
+      faceData: List<double>.from(faceData.map((x) => x.toDouble())),
     );
     return data;
   }

@@ -53,8 +53,7 @@ class SignInState extends State<SignIn> {
   Size imageSize;
   Face faceDetected;
 
-  FaceModel faceModel;
-  CouchbaseService _couchbaseService = CouchbaseService();
+  FaceModel _faceModel;
 
   @override
   void initState() {
@@ -81,15 +80,10 @@ class SignInState extends State<SignIn> {
       cameraInitializated = true;
     });
 
-    // _faceNetService.deviceInfoListener((FaceModel faceModel) {
-    //   setState(() {
-    //     _faceModel = faceModel;   
-    //   });   
-    // });
-   await _couchbaseService.getPersistData(Couchbase.MOBILE_INFO, 'thang.td@katsuma.asia', (dataJson) {
+    _faceNetService.deviceInfoListener((FaceModel faceModel) {
       setState(() {
-        faceModel = FaceModel.fromJson(dataJson);
-      });
+        _faceModel = faceModel;   
+      });   
     });
 
     _frameFaces();
@@ -173,7 +167,7 @@ class SignInState extends State<SignIn> {
 
   String _predictUser() {
     // String userAndPass = _faceNetService.predict();
-    String userAndPass = _faceNetService.predictCouchbase(faceModel);
+    String userAndPass = _faceNetService.predictCouchbase(_faceModel);
     return userAndPass ?? null;
   }
 
