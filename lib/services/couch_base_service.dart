@@ -5,6 +5,7 @@ import 'package:face_net_authentication/services/couch_session_service.dart';
 import 'package:face_net_authentication/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart' as log;
+import 'package:uuid/uuid.dart';
 
 class CouchbaseService {
   CouchSessionService _sessionService = new CouchSessionService();
@@ -50,11 +51,12 @@ class CouchbaseService {
 
   Future persistData(String type, String userName, dynamic data) async {
     try {
-      final String documentId = type + "_" + userName.toLowerCase();
-      // String documentId = type + "_1e2a3b8a-cb5c-11eb-b8bc-0242ac130003";
+      var uuid = Uuid().v1();
+      final String documentId = type + "_" + uuid;
       Document tempDoc = await _couchDatabase.document(documentId);
       if (tempDoc == null) {
         _document = MutableDocument(id: documentId)
+            .setString("owner", userName.substring(0, userName.lastIndexOf('@')))
             .setString("type", type.toLowerCase())
             .setString("key", documentId);
       } else {
@@ -70,9 +72,8 @@ class CouchbaseService {
     }
   }
 
-  Future<bool> clearPersistData(String key, String userName) async {
+  Future<bool> clearPersistData(String documentId, String userName) async {
     try {
-      var documentId = key + "_" + userName.toLowerCase();
       _document.remove(documentId);
       await _couchDatabase.saveDocument(_document);
       return true;
@@ -82,29 +83,40 @@ class CouchbaseService {
     }
   }
 
-  Future getPersistData(
-    String type, 
-    String userName,
+  Future getPersistDataByKey(
+    String key,
     ValueChanged onDataChange,
     {List<SelectResultProtocol> listQuery}
   ) async {
-    var documentId = type + "_" + userName.toLowerCase();
-    _getPersist(documentId, (Result db) {
+    _getPersist("key", key, (Result db) {
       if (db == null) onDataChange({});
       var stringDoc = db.getValue(key: "docs");
       onDataChange(stringDoc);
     });
   }
 
-  _getPersist(String key, ValueChanged<Result> onDataChange) {
+  Future getPersistDataByOwner( 
+    String userName,
+    ValueChanged onDataChange,
+    {List<SelectResultProtocol> listQuery}
+  ) async {
+    var owner = userName.substring(0, userName.lastIndexOf('@'));
+    _getPersist("owner", owner, (Result db) {
+      if (db == null) onDataChange({});
+      var stringDoc = db.getValue(key: "docs");
+      onDataChange(stringDoc);
+    });
+  }
+
+  _getPersist(String property, String value, ValueChanged<Result> onDataChange) {
     var query = QueryBuilder.select([SelectResult.all().from("docs")])
         .from(StorageDB.SYNC, as: "docs")
-        .where(Expression.property("key")
+        .where(Expression.property(property)
             .from("docs")
-            .equalTo(Expression.string(key)));
+            .equalTo(Expression.string(value)));
 
     final queryToken = query.addChangeListener((QueryChange qChange) {
-      log.Logger().i('Query change type $key', 'SyncStorageService: getPersist');
+      log.Logger().i('Query change type $property', 'SyncStorageService: getPersist');
       var a = qChange.results;
       if (a.isNotEmpty) {
         onDataChange(qChange.results.single);

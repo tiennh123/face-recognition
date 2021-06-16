@@ -7,7 +7,7 @@ import 'package:face_net_authentication/pages/models/face.model.dart';
 import 'package:face_net_authentication/pages/models/user.model.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
 import 'package:face_net_authentication/pages/widgets/app_button.dart';
-import 'package:face_net_authentication/pages/widgets/app_text_field.dart';
+// import 'package:face_net_authentication/pages/widgets/app_text_field.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
 import 'package:face_net_authentication/services/couch_base_service.dart';
@@ -45,7 +45,7 @@ class SignUpState extends State<SignUp> {
   bool isShot = false;
 
   User predictedUser;
-  TextEditingController _userTextEditingController = TextEditingController(text: '');
+  // TextEditingController _userTextEditingController = TextEditingController(text: '');
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   // service injection
@@ -286,6 +286,7 @@ class SignUpState extends State<SignUp> {
   signSheet(context) {
     return Container(
       padding: EdgeInsets.all(20),
+      width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -293,13 +294,13 @@ class SignUpState extends State<SignUp> {
           Container(
             child: Column(
               children: [
-                AppTextField(
-                  controller: _userTextEditingController,
-                  labelText: "Your UserName",
-                ),
-                SizedBox(height: 10),
-                Divider(),
-                SizedBox(height: 10),
+                // AppTextField(
+                //   controller: _userTextEditingController,
+                //   labelText: "Your UserName",
+                // ),
+                // SizedBox(height: 10),
+                // Divider(),
+                // SizedBox(height: 10),
                 AppButton(
                   text: 'SIGN UP',
                   onPressed: () async {
@@ -321,7 +322,8 @@ class SignUpState extends State<SignUp> {
   Future _signUp(context) async {
     /// gets predicted data from facenet service (user face detected)
     List predictedData = _faceNetService.predictedData;
-    String user = _userTextEditingController.text;
+    // String user = _userTextEditingController.text;
+    String user = UserTest.UserName;
 
     /// creates a new user in the 'database'
     await _dataBaseService.saveData(user, predictedData);

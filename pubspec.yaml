@@ -40,6 +40,7 @@ dependencies:
   logger: ^1.0.0
   http: ^0.13.1
   flutter_secure_storage: ^4.1.0
+  uuid: ^3.0.4
   # couchbase_lite: ^2.8.1
   # couchbase_lite_dart: ^0.4.0
   couchbase_lite:

@@ -24,3 +24,8 @@ class FlavorConfig {
 class Couchbase {
   static const String MOBILE_INFO = 'MOBILE_INFO'; // couchbase current only allow type mobile_info
 }
+
+class UserTest {
+  static const String UserName = "son.vh@katsuma.asia";
+  static const String Password = "Son123#";
+}

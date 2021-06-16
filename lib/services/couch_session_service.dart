@@ -38,8 +38,8 @@ class CouchSessionService {
   Future<JWTModel> login() async {
     var authenState = new JWTModel();
     var rawResponse = await postAuthen(
-      userName: 'thang.td@katsuma.asia', 
-      password: 'Thang123#', 
+      userName: UserTest.UserName, 
+      password: UserTest.Password, 
       deviceId: '',
     );
     if (rawResponse.statusCode == 200) {

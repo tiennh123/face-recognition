@@ -24,7 +24,6 @@ class FaceModel {
   }
 
   Map<String, String> toJson() => {
-      "owner": userName.substring(0, userName.lastIndexOf('@')), // required
       "device_name": "Joy 3", // required
       "device_id": "243d6ddf-13e6-4b1d-9867-9d49b11dd2bf", // required
       "device_version": "10", // required

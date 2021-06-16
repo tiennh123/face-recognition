@@ -33,7 +33,7 @@ class FaceNetService {
   CouchbaseService _couchbaseService = CouchbaseService();
   deviceInfoListener(ValueChanged<FaceModel> deviceInfoUpdated) {
     try {
-      _couchbaseService.getPersistData(Couchbase.MOBILE_INFO, 'thang.td@katsuma.asia', (dataJson) {
+      _couchbaseService.getPersistDataByOwner(UserTest.UserName, (dataJson) {
         var data = new Map<String, dynamic>.from(dataJson);
         deviceInfoUpdated(FaceModel.fromJson(data));
       });

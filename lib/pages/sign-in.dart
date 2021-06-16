@@ -7,7 +7,6 @@ import 'package:face_net_authentication/pages/profile.dart';
 import 'package:face_net_authentication/pages/widgets/FacePainter.dart';
 import 'package:face_net_authentication/pages/widgets/camera_header.dart';
 import 'package:face_net_authentication/services/camera.service.dart';
-import 'package:face_net_authentication/services/couch_base_service.dart';
 import 'package:face_net_authentication/services/facenet.service.dart';
 import 'package:face_net_authentication/services/ml_vision_service.dart';
 import 'package:camera/camera.dart';
